@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra Digital | Cyberpunk Edition</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <!-- FontAwesome for Brand Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts: JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'JetBrains Mono', monospace; /* Font mới theo yêu cầu */
+            overflow-x: hidden;
+            margin: 0;
+            background-color: #030303;
+            color: #e0e0e0;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0; 
+            transition: opacity 1s ease;
+        }
+
+        /* Glassmorphism sắc cạnh hơn cho hợp style tech */
+        .glass {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-nav {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Tech Borders */
+        .tech-border {
+            position: relative;
+        }
+        .tech-border::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px;
+            width: 20px; height: 20px;
+            border-top: 2px solid #6366f1;
+            border-left: 2px solid #6366f1;
+        }
+        .tech-border::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; right: -1px;
+            width: 20px; height: 20px;
+            border-bottom: 2px solid #6366f1;
+            border-right: 2px solid #6366f1;
+        }
+
+        /* Glitch Effect Text (CSS Pure) */
+        .glitch-text:hover {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: #6366f1;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #4f46e5; }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #fff 0%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Sections height adjustment for scroll room */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
+
+    <div id="canvas-container"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-nav transition-all duration-300 border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex-shrink-0 cursor-pointer group">
+                    <span class="text-2xl font-bold tracking-tighter text-white group-hover:text-indigo-400 transition-colors">&lt;HNQ /&gt;</span>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-sm font-medium text-gray-300 hover:text-white hover:tracking-widest transition-all duration-300">_HOME</a>
+                    <a href="#features" class="text-sm font-medium text-gray-300 hover:text-white hover:tracking-widest transition-all duration-300">_SYSTEM</a>
+                    <a href="#projects" class="text-sm font-medium text-gray-300 hover:text-white hover:tracking-widest transition-all duration-300">_PROJECTS</a>
+                    <a href="#skills" class="text-sm font-medium text-gray-300 hover:text-white hover:tracking-widest transition-all duration-300">_SKILLS</a>
+                    <a href="#connect" class="text-sm font-medium text-gray-300 hover:text-white hover:tracking-widest transition-all duration-300">_CONNECT</a>
+                    <a href="#contact" class="px-5 py-2 border border-indigo-500/50 hover:bg-indigo-600/20 text-indigo-400 rounded text-sm font-bold transition-all">
+                        INIT_CONTACT()
+                    </a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-300 hover:text-white focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Panel -->
+        <div id="mobile-menu" class="hidden md:hidden bg-black/95 backdrop-blur-xl border-b border-white/10 absolute w-full overflow-hidden">
+            <div class="px-4 pt-2 pb-6 space-y-2">
+                <a href="#" class="block px-3 py-4 text-base font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-md transition-all">_HOME</a>
+                <a href="#features" class="block px-3 py-4 text-base font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-md transition-all">_SYSTEM</a>
+                <a href="#projects" class="block px-3 py-4 text-base font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-md transition-all">_PROJECTS</a>
+                <a href="#skills" class="block px-3 py-4 text-base font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-md transition-all">_SKILLS</a>
+                <a href="#connect" class="block px-3 py-4 text-base font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-md transition-all">_CONNECT</a>
+                <a href="#contact" class="block px-3 py-4 text-base font-bold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20 rounded-md transition-all">INIT_CONTACT()</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative px-4 pt-20">
+        <div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="hero-content z-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 border border-green-500/30 bg-green-500/5 text-green-400 text-xs font-bold tracking-widest mb-6 rounded-sm">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    SYSTEM_ONLINE
+                </div>
+                <h1 class="text-5xl md:text-7xl font-extrabold mb-6 leading-none tracking-tighter text-white">
+                    NEXT_GEN<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-white glitch-text cursor-default">
+                        EXPERIENCE
+                    </span>
+                </h1>
+                <p class="text-lg text-gray-400 mb-10 max-w-lg leading-relaxed border-l-2 border-indigo-500 pl-6">
+                    // Khám phá không gian kỹ thuật số nơi dòng code gặp gỡ nghệ thuật thị giác. Chúng tôi xây dựng tương lai.
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    <button class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm tracking-wider transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+                        EXECUTE_PROJECT
+                    </button>
+                    <button class="px-8 py-4 border border-gray-700 hover:border-white text-gray-300 hover:text-white font-bold text-sm tracking-wider transition-all">
+                        VIEW_SOURCE
+                    </button>
+                </div>
+            </div>
+            <!-- 3D space placeholder (managed by Three.js) -->
+            <div></div> 
+        </div>
+        
+        <div class="absolute bottom-10 left-6 text-xs text-gray-600 rotate-90 origin-left">
+            SCROLL_VELOCITY: 0.0
+        </div>
+    </section>
+
+    <!-- Features Section with heavy scroll interaction -->
+    <section id="features" class="relative py-24 px-4">
+        <!-- Background Label -->
+        <div class="absolute top-20 right-0 text-9xl font-black text-white/5 pointer-events-none select-none overflow-hidden whitespace-nowrap parallax-text">
+            SYSTEM CORE
+        </div>
+
+        <div class="max-w-7xl mx-auto w-full z-10">
+            <div class="mb-20 border-b border-white/10 pb-8 flex justify-between items-end section-trigger">
+                <div>
+                    <h2 class="text-4xl md:text-6xl font-bold text-white mb-2">MODULES</h2>
+                    <p class="text-indigo-400 font-mono text-sm">Loaded 3/3 components</p>
+                </div>
+                <div class="text-right hidden md:block">
+                    <div class="text-xs text-gray-500">CPU USAGE</div>
+                    <div class="text-xl font-bold text-white">12%</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="feature-card glass p-8 tech-border group hover:bg-indigo-900/10 transition-colors duration-500">
+                    <div class="text-5xl mb-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">01</div>
+                    <h3 class="text-xl font-bold text-white mb-4 group-hover:text-indigo-400">WEBGL_RENDER</h3>
+                    <p class="text-sm text-gray-400 leading-loose">
+                        Tối ưu hóa phần cứng đồ họa để hiển thị hàng triệu polygon trong thời gian thực. Trải nghiệm không giật lag.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card glass p-8 tech-border group hover:bg-purple-900/10 transition-colors duration-500 mt-0 md:mt-12">
+                    <div class="text-5xl mb-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">02</div>
+                    <h3 class="text-xl font-bold text-white mb-4 group-hover:text-purple-400">PHYSICS_ENGINE</h3>
+                    <p class="text-sm text-gray-400 leading-loose">
+                        Tương tác vật lý thực tế. Va chạm, trọng lực và quán tính được tính toán chính xác từng frame.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card glass p-8 tech-border group hover:bg-pink-900/10 transition-colors duration-500 mt-0 md:mt-24">
+                    <div class="text-5xl mb-6 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">03</div>
+                    <h3 class="text-xl font-bold text-white mb-4 group-hover:text-pink-400">AI_INTEGRATION</h3>
+                    <p class="text-sm text-gray-400 leading-loose">
+                        Tự động hóa quy trình thiết kế với Generative AI. Tạo ra nội dung độc bản cho mỗi phiên truy cập.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Big Text Scroll Section -->
+    <section class="py-32 overflow-hidden bg-indigo-900/10 border-y border-white/5">
+        <div class="marquee-container flex whitespace-nowrap">
+            <h2 class="text-8xl md:text-[10rem] font-black text-transparent stroke-text px-4">
+                INNOVATION &bull; SPEED &bull; PRECISION &bull; FUTURE &bull;
+            </h2>
+             <h2 class="text-8xl md:text-[10rem] font-black text-transparent stroke-text px-4">
+                INNOVATION &bull; SPEED &bull; PRECISION &bull; FUTURE &bull;
+            </h2>
+        </div>
+        <style>
+            .stroke-text {
+                -webkit-text-stroke: 2px rgba(255,255,255,0.1);
+            }
+        </style>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="relative py-24 px-4 border-t border-white/5">
+        <div class="max-w-7xl mx-auto w-full z-10">
+            <div class="mb-16">
+                <h2 class="text-4xl md:text-6xl font-bold text-white mb-4">DEPLOYED_SYSTEMS</h2>
+                <div class="h-1 w-20 bg-indigo-500"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Project 1 -->
+                <div class="project-card glass p-6 tech-border group hover:bg-indigo-900/20 transition-all duration-300">
+                    <div class="h-48 bg-gray-800/50 mb-6 flex items-center justify-center border border-white/10">
+                        <span class="text-gray-500 font-mono">IMG_NOT_FOUND</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-400">E-Commerce Core</h3>
+                    <p class="text-sm text-gray-400 mb-4">Hệ thống thương mại điện tử quy mô lớn với Laravel & Vue.js.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs px-2 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Laravel</span>
+                        <span class="text-xs px-2 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">MySQL</span>
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="project-card glass p-6 tech-border group hover:bg-indigo-900/20 transition-all duration-300">
+                    <div class="h-48 bg-gray-800/50 mb-6 flex items-center justify-center border border-white/10">
+                        <span class="text-gray-500 font-mono">IMG_NOT_FOUND</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-400">AI Analytics Tool</h3>
+                    <p class="text-sm text-gray-400 mb-4">Công cụ phân tích dữ liệu sử dụng AI để dự đoán xu hướng thị trường.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs px-2 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30">Python</span>
+                        <span class="text-xs px-2 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30">AI/ML</span>
+                    </div>
+                </div>
+
+                 <!-- Project 3 -->
+                 <div class="project-card glass p-6 tech-border group hover:bg-indigo-900/20 transition-all duration-300">
+                    <div class="h-48 bg-gray-800/50 mb-6 flex items-center justify-center border border-white/10">
+                        <span class="text-gray-500 font-mono">IMG_NOT_FOUND</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-400">Marketing Automation</h3>
+                    <p class="text-sm text-gray-400 mb-4">Tự động hóa quảng cáo Facebook & Google Ads.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs px-2 py-1 bg-pink-500/20 text-pink-300 border border-pink-500/30">API</span>
+                        <span class="text-xs px-2 py-1 bg-pink-500/20 text-pink-300 border border-pink-500/30">Ads</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="relative py-24 px-4 bg-black/20">
+        <div class="max-w-6xl mx-auto w-full z-10">
+            <div class="mb-16 text-right">
+                <h2 class="text-4xl md:text-6xl font-bold text-white mb-4">SKILL_MATRIX</h2>
+                <div class="h-1 w-20 bg-green-500 ml-auto"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- Tech Stack -->
+                <div>
+                    <h3 class="text-2xl font-bold text-indigo-400 mb-8 flex items-center">
+                        <span class="w-2 h-2 bg-indigo-500 mr-3"></span> BACKEND_&_DEV
+                    </h3>
+                    <div class="grid grid-cols-1 gap-4">
+                        <!-- Skill Card: Laravel -->
+                        <div class="skill-card glass p-4 flex items-center gap-4 tech-border hover:bg-indigo-900/20 transition-all">
+                            <div class="p-3 bg-indigo-500/10 rounded-lg w-14 h-14 flex items-center justify-center">
+                                <i class="fab fa-laravel text-3xl text-indigo-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-white">PHP Laravel</span>
+                                    <span class="text-indigo-400">90%</span>
+                                </div>
+                                <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="skill-bar h-full bg-indigo-500 w-0" data-width="90%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skill Card: API -->
+                        <div class="skill-card glass p-4 flex items-center gap-4 tech-border hover:bg-indigo-900/20 transition-all">
+                            <div class="p-3 bg-indigo-500/10 rounded-lg w-14 h-14 flex items-center justify-center">
+                                <i class="fas fa-network-wired text-3xl text-indigo-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-white">HTTP / REST API</span>
+                                    <span class="text-indigo-400">85%</span>
+                                </div>
+                                <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="skill-bar h-full bg-indigo-500 w-0" data-width="85%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skill Card: AI -->
+                        <div class="skill-card glass p-4 flex items-center gap-4 tech-border hover:bg-indigo-900/20 transition-all">
+                            <div class="p-3 bg-indigo-500/10 rounded-lg w-14 h-14 flex items-center justify-center">
+                                <i class="fas fa-brain text-3xl text-indigo-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-white">AI Analysis</span>
+                                    <span class="text-indigo-400">80%</span>
+                                </div>
+                                <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="skill-bar h-full bg-indigo-500 w-0" data-width="80%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Creative & Marketing -->
+                <div>
+                    <h3 class="text-2xl font-bold text-pink-400 mb-8 flex items-center">
+                        <span class="w-2 h-2 bg-pink-500 mr-3"></span> CREATIVE_&_ADS
+                    </h3>
+                    <div class="grid grid-cols-1 gap-4">
+                        <!-- Skill Card: FB Ads -->
+                        <div class="skill-card glass p-4 flex items-center gap-4 tech-border hover:bg-pink-900/20 transition-all">
+                            <div class="p-3 bg-pink-500/10 rounded-lg w-14 h-14 flex items-center justify-center">
+                                <i class="fab fa-facebook-f text-3xl text-pink-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-white">Facebook Ads</span>
+                                    <span class="text-pink-400">95%</span>
+                                </div>
+                                <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="skill-bar h-full bg-pink-500 w-0" data-width="95%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skill Card: Photoshop -->
+                        <div class="skill-card glass p-4 flex items-center gap-4 tech-border hover:bg-pink-900/20 transition-all">
+                            <div class="p-3 bg-pink-500/10 rounded-lg w-14 h-14 flex items-center justify-center">
+                                <i class="fas fa-image text-3xl text-pink-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-white">Photoshop</span>
+                                    <span class="text-pink-400">75%</span>
+                                </div>
+                                <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="skill-bar h-full bg-pink-500 w-0" data-width="75%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skill Card: Video -->
+                        <div class="skill-card glass p-4 flex items-center gap-4 tech-border hover:bg-pink-900/20 transition-all">
+                            <div class="p-3 bg-pink-500/10 rounded-lg w-14 h-14 flex items-center justify-center">
+                                <i class="fas fa-video text-3xl text-pink-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-white">Video Editor</span>
+                                    <span class="text-pink-400">70%</span>
+                                </div>
+                                <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="skill-bar h-full bg-pink-500 w-0" data-width="70%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Media Section -->
+    <section id="connect" class="py-32 border-t border-white/5 relative overflow-hidden">
+        <div class="absolute inset-0 bg-indigo-900/5"></div>
+        <div class="max-w-6xl mx-auto px-4 relative z-10">
+            <h2 class="text-3xl md:text-5xl font-bold text-white mb-16 text-center tracking-widest">CONNECT_UPLINK</h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <!-- Facebook -->
+                <a href="https://www.facebook.com/hncosmic/" class="social-card group relative h-40 glass tech-border flex flex-col items-center justify-center hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/10 transition-colors duration-300"></div>
+                    <i class="fab fa-facebook text-5xl text-gray-400 group-hover:text-blue-500 mb-4 transition-colors"></i>
+                    <span class="text-xs font-bold tracking-widest text-gray-500 group-hover:text-white">FACEBOOK</span>
+                </a>
+
+                <!-- Instagram -->
+                <a href="#" class="social-card group relative h-40 glass tech-border flex flex-col items-center justify-center hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute inset-0 bg-pink-600/0 group-hover:bg-pink-600/10 transition-colors duration-300"></div>
+                    <i class="fab fa-instagram text-5xl text-gray-400 group-hover:text-pink-500 mb-4 transition-colors"></i>
+                    <span class="text-xs font-bold tracking-widest text-gray-500 group-hover:text-white">INSTAGRAM</span>
+                </a>
+
+                <!-- Telegram -->
+                <a href="#" class="social-card group relative h-40 glass tech-border flex flex-col items-center justify-center hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute inset-0 bg-cyan-600/0 group-hover:bg-cyan-600/10 transition-colors duration-300"></div>
+                    <i class="fab fa-telegram text-5xl text-gray-400 group-hover:text-cyan-500 mb-4 transition-colors"></i>
+                    <span class="text-xs font-bold tracking-widest text-gray-500 group-hover:text-white">TELEGRAM</span>
+                </a>
+
+                <!-- Zalo -->
+                <a href="#" class="social-card group relative h-40 glass tech-border flex flex-col items-center justify-center hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/10 transition-colors duration-300"></div>
+                    <div class="w-12 h-12 rounded bg-gray-800 flex items-center justify-center mb-4 group-hover:bg-blue-500 transition-colors">
+                        <span class="text-xl font-bold text-gray-400 group-hover:text-white">Z</span>
+                    </div>
+                    <span class="text-xs font-bold tracking-widest text-gray-500 group-hover:text-white">ZALO</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact / Footer -->
+    <section id="contact" class="relative min-h-[70vh] flex items-center justify-center text-center px-4">
+        <div class="z-10 max-w-4xl w-full glass p-12 md:p-20 tech-border">
+            <p class="text-indigo-400 mb-4 font-bold tracking-widest">READY TO DEPLOY?</p>
+            <h2 class="text-4xl md:text-6xl font-bold text-white mb-8">Bắt đầu dự án của bạn</h2>
+            <div class="flex flex-col md:flex-row justify-center gap-4 max-w-lg mx-auto">
+                <input type="email" placeholder="Enter your email_address..." class="bg-black/50 border border-gray-700 text-white px-6 py-4 w-full focus:outline-none focus:border-indigo-500 font-mono text-sm">
+                <button class="bg-white text-black font-bold px-8 py-4 hover:bg-indigo-500 hover:text-white transition-colors whitespace-nowrap">
+                    SEND_REQUEST
+                </button>
+            </div>
+        </div>
+        <div class="absolute bottom-0 w-full py-6 border-t border-white/10 text-center text-xs text-gray-600">
+            ASTRA DIGITAL © 2024 // ALL SYSTEMS OPERATIONAL
+        </div>
+    </section>
+
+    <script>
+        // --- Mobile Menu Toggle ---
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', () => {
+                const icon = mobileMenuBtn.querySelector('i');
+                
+                if (mobileMenu.classList.contains('hidden')) {
+                    // Open Menu
+                    mobileMenu.classList.remove('hidden');
+                    gsap.fromTo(mobileMenu, 
+                        { height: 0, opacity: 0 }, 
+                        { height: 'auto', opacity: 1, duration: 0.4, ease: "power2.out" }
+                    );
+                    
+                    // Stagger links animation
+                    gsap.fromTo(mobileMenu.querySelectorAll('a'),
+                        { x: -20, opacity: 0 },
+                        { x: 0, opacity: 1, duration: 0.3, stagger: 0.05, delay: 0.1 }
+                    );
+
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    // Close Menu
+                    gsap.to(mobileMenu, {
+                        height: 0, 
+                        opacity: 0, 
+                        duration: 0.3, 
+                        ease: "power2.in",
+                        onComplete: () => {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenu.style.height = ''; // Reset inline style
+                        }
+                    });
+                    
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+        }
+
+        // --- THREE.JS SETUP ---
+        let scene, camera, renderer;
+        let particleSphere, wireframeSphere, torusKnot, starField, shapesGroup, bigBlocksGroup, blobSphere;
+        let planetsGroup, explosionParticles, trailParticles;
+        let mouseX = 0, mouseY = 0;
+        let raycaster, mouse;
+        let trailCursor = 0;
+        const trailSize = 200;
+        let mouse3D = new THREE.Vector3(0, 0, 0);
+
+        const initThree = () => {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.0015); // Đen tuyền
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 25;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // Raycaster for click detection
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // 1. Main Object: Cyber Sphere
+            const geometry = new THREE.IcosahedronGeometry(10, 4);
+            const material = new THREE.PointsMaterial({
+                color: 0x4f46e5,
+                size: 0.08,
+                transparent: true,
+                opacity: 0.8
+            });
+            particleSphere = new THREE.Points(geometry, material);
+            scene.add(particleSphere);
+
+            // 2. Secondary Object: Liquid-Metal Torus Knot (Updated Colors)
+            // Reduced size to prevent screen filling
+            const torusGeo = new THREE.TorusKnotGeometry(5, 1.5, 128, 64); 
+            
+            // Custom Shader for Liquid Gradient - NEW COLORS
+            const liquidMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    color1: { value: new THREE.Color(0x00ffff) }, // Cyan Neon
+                    color2: { value: new THREE.Color(0xff00ff) }, // Magenta Neon
+                    color3: { value: new THREE.Color(0xffffff) }  // White Highlights
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    varying vec3 vNormal;
+                    varying vec3 vViewPosition;
+                    uniform float time;
+
+                    void main() {
+                        vUv = uv;
+                        vNormal = normalize(normalMatrix * normal);
+                        
+                        // Liquid distortion effect
+                        vec3 newPos = position;
+                        float wave = sin(time * 2.0 + position.x * 0.5) * 0.3;
+                        float wave2 = cos(time * 1.5 + position.y * 0.5) * 0.3;
+                        newPos += normal * (wave + wave2);
+
+                        vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
+                        vViewPosition = -mvPosition.xyz;
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vViewPosition;
+                    uniform vec3 color1;
+                    uniform vec3 color2;
+                    uniform vec3 color3;
+
+                    void main() {
+                        vec3 normal = normalize(vNormal);
+                        vec3 viewDir = normalize(vViewPosition);
+                        
+                        // Fresnel effect for glowing edges
+                        float fresnel = dot(viewDir, normal);
+                        fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
+                        fresnel = pow(fresnel, 2.0);
+
+                        // Iridescent gradient
+                        vec3 baseColor = mix(color2, color3, normal.y * 0.5 + 0.5);
+                        vec3 finalColor = mix(baseColor, color1, fresnel);
+                        
+                        // Add some specular shine
+                        float specular = pow(max(dot(reflect(-viewDir, normal), viewDir), 0.0), 30.0);
+                        finalColor += vec3(specular);
+
+                        gl_FragColor = vec4(finalColor, 1.0);
+                    }
+                `,
+                transparent: false,
+                side: THREE.DoubleSide
+            });
+
+            torusKnot = new THREE.Mesh(torusGeo, liquidMaterial);
+            torusKnot.position.set(0, 0, -5); 
+            scene.add(torusKnot);
+
+            // 3. Floating Geometric Shapes
+            shapesGroup = new THREE.Group();
+            const shapeGeo = new THREE.OctahedronGeometry(1, 0);
+            const shapeMat = new THREE.MeshBasicMaterial({ color: 0x6366f1, wireframe: true });
+            
+            for(let i=0; i<30; i++) {
+                const mesh = new THREE.Mesh(shapeGeo, shapeMat);
+                mesh.position.set(
+                    (Math.random() - 0.5) * 100,
+                    (Math.random() - 0.5) * 100,
+                    (Math.random() - 0.5) * 50 - 20
+                );
+                mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+                shapesGroup.add(mesh);
+            }
+            scene.add(shapesGroup);
+
+            // 4. Starfield
+            const starsGeometry = new THREE.BufferGeometry();
+            const starsCount = 2000;
+            const posArray = new Float32Array(starsCount * 3);
+            
+            for(let i = 0; i < starsCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 200;
+            }
+            starsGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const starsMaterial = new THREE.PointsMaterial({
+                size: 0.2, // Increased size
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.8
+            });
+            starField = new THREE.Points(starsGeometry, starsMaterial);
+            scene.add(starField);
+
+            // 5. Big 3D Blocks (REMOVED)
+            // bigBlocksGroup removed as requested
+
+            // 6. Floating Blob
+            const blobGeo = new THREE.IcosahedronGeometry(6, 10);
+            blobGeo.userData = { originalPositions: blobGeo.attributes.position.array.slice() };
+            
+            const blobMat = new THREE.MeshPhongMaterial({
+                color: 0x8b5cf6,
+                shininess: 100,
+                wireframe: false,
+                flatShading: false
+            });
+            blobSphere = new THREE.Mesh(blobGeo, blobMat);
+            blobSphere.position.set(15, -5, 0);
+            scene.add(blobSphere);
+
+            // 7. Planets System
+            planetsGroup = new THREE.Group();
+            
+            // Sun with Lava Shader (REMOVED)
+            /*
+            const sunGeo = new THREE.SphereGeometry(4, 64, 64);
+            const sunMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    varying vec3 vPosition;
+                    void main() {
+                        vUv = uv;
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    varying vec2 vUv;
+                    varying vec3 vPosition;
+
+                    // Simple pseudo-noise function
+                    float noise(vec3 p) {
+                        return sin(p.x*10.0 + time) * sin(p.y*10.0 + time) * sin(p.z*10.0 + time);
+                    }
+
+                    void main() {
+                        float n = noise(vPosition * 0.2 + time * 0.5);
+                        // Lava colors: Red -> Orange -> Yellow
+                        vec3 color = mix(vec3(0.8, 0.0, 0.0), vec3(1.0, 0.8, 0.0), n * 0.5 + 0.5);
+                        // Add glow intensity
+                        float intensity = 1.2;
+                        gl_FragColor = vec4(color * intensity, 1.0);
+                    }
+                `
+            });
+            const sun = new THREE.Mesh(sunGeo, sunMat);
+            sun.position.set(-20, 15, -10);
+            planetsGroup.add(sun);
+            
+            // Sun Glow (Outer)
+            const sunGlowGeo = new THREE.SphereGeometry(4.8, 32, 32);
+            const sunGlowMat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.2 });
+            const sunGlow = new THREE.Mesh(sunGlowGeo, sunGlowMat);
+            sun.add(sunGlow);
+            */
+
+            const textureLoader = new THREE.TextureLoader();
+
+            // Earth (Realistic)
+            const earthGeo = new THREE.SphereGeometry(2, 64, 64);
+            const earthMat = new THREE.MeshPhongMaterial({
+                map: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg'),
+                specularMap: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg'),
+                normalMap: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg'),
+                shininess: 10
+            });
+            const earth = new THREE.Mesh(earthGeo, earthMat);
+            earth.position.set(25, 10, -5);
+            planetsGroup.add(earth);
+
+            // Moon (Realistic)
+            const moonGeo = new THREE.SphereGeometry(0.5, 64, 64);
+            const moonMat = new THREE.MeshPhongMaterial({
+                map: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg'),
+                shininess: 5
+            });
+            const moon = new THREE.Mesh(moonGeo, moonMat);
+            moon.position.set(3, 0, 0);
+            earth.add(moon);
+            earth.userData = { moon: moon };
+
+            // Mars
+            const marsGeo = new THREE.SphereGeometry(1.5, 32, 32);
+            const marsMat = new THREE.MeshPhongMaterial({ color: 0xff3300 });
+            const mars = new THREE.Mesh(marsGeo, marsMat);
+            mars.position.set(-15, -15, 5);
+            planetsGroup.add(mars);
+
+            // Saturn
+            const saturnGeo = new THREE.SphereGeometry(2.5, 32, 32);
+            const saturnMat = new THREE.MeshPhongMaterial({ color: 0xeeddcc });
+            const saturn = new THREE.Mesh(saturnGeo, saturnMat);
+            saturn.position.set(10, -20, -15);
+            
+            const ringGeo = new THREE.TorusGeometry(4, 0.5, 2, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0xccaa88, transparent: true, opacity: 0.8 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2.5;
+            saturn.add(ring);
+            planetsGroup.add(saturn);
+
+            scene.add(planetsGroup);
+
+            // 8. Explosion Particles System
+            const explosionCount = 1000;
+            const explosionGeo = new THREE.BufferGeometry();
+            const explosionPos = new Float32Array(explosionCount * 3);
+            const explosionVel = new Float32Array(explosionCount * 3);
+            
+            // Initialize off-screen
+            for(let i=0; i<explosionCount*3; i++) {
+                explosionPos[i] = 9999; 
+                explosionVel[i] = 0;
+            }
+            
+            explosionGeo.setAttribute('position', new THREE.BufferAttribute(explosionPos, 3));
+            explosionGeo.userData = { velocity: explosionVel, active: false, time: 0 };
+            
+            const explosionMat = new THREE.PointsMaterial({
+                color: 0xffaa00,
+                size: 0.2,
+                transparent: true,
+                opacity: 1,
+                blending: THREE.AdditiveBlending
+            });
+            
+            explosionParticles = new THREE.Points(explosionGeo, explosionMat);
+            scene.add(explosionParticles);
+
+            // 9. Time Rift Trail (Particle System)
+            const tGeo = new THREE.BufferGeometry();
+            const tPos = new Float32Array(trailSize * 3);
+            const tColors = new Float32Array(trailSize * 3);
+            
+            // Initialize off-screen
+            for(let i=0; i<trailSize*3; i++) {
+                tPos[i] = 9999;
+                tColors[i] = 1;
+            }
+            
+            tGeo.setAttribute('position', new THREE.BufferAttribute(tPos, 3));
+            tGeo.setAttribute('color', new THREE.BufferAttribute(tColors, 3));
+            tGeo.userData = { lives: new Float32Array(trailSize) };
+            
+            const tMat = new THREE.PointsMaterial({
+                size: 0.4,
+                vertexColors: true,
+                transparent: true,
+                opacity: 1,
+                blending: THREE.AdditiveBlending,
+                map: new THREE.TextureLoader().load('https://assets.codepen.io/127738/dotTexture.png') // Optional soft dot
+            });
+            // Fallback if texture fails or for style:
+            // Actually, let's use a simple square or circle without texture to avoid CORS/loading issues if possible, 
+            // but a texture makes it look much better. 
+            // Let's stick to simple square points for reliability, or generate a texture on canvas.
+            
+            // Generating a soft particle texture on the fly
+            const getTexture = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 32; canvas.height = 32;
+                const ctx = canvas.getContext('2d');
+                const grad = ctx.createRadialGradient(16,16,0,16,16,16);
+                grad.addColorStop(0, 'rgba(255,255,255,1)');
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0,0,32,32);
+                const texture = new THREE.Texture(canvas);
+                texture.needsUpdate = true;
+                return texture;
+            };
+            
+            tMat.map = getTexture();
+            tMat.alphaTest = 0.1;
+
+            trailParticles = new THREE.Points(tGeo, tMat);
+            scene.add(trailParticles);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0x6366f1, 2, 100);
+            pointLight.position.set(10, 10, 10);
+            scene.add(pointLight);
+            const cyanLight = new THREE.PointLight(0x00ffcc, 1, 100);
+            cyanLight.position.set(-10, -10, 10);
+            scene.add(cyanLight);
+            
+            // Sun Light (REMOVED)
+            /*
+            const sunLight = new THREE.PointLight(0xffaa00, 2, 200);
+            sunLight.position.set(-20, 15, -10);
+            scene.add(sunLight);
+            */
+
+            // --- Mouse Move Logic ---
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX - window.innerWidth / 2) * 0.001;
+                mouseY = (e.clientY - window.innerHeight / 2) * 0.001;
+                
+                // Update normalized mouse coordinates for Raycaster
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                // Update Trail Target Position
+                // Project mouse to a plane closer to camera (z=15) so it's always visible
+                const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+                vector.unproject(camera);
+                const dir = vector.sub(camera.position).normalize();
+                const distance = (15 - camera.position.z) / dir.z; 
+                mouse3D.copy(camera.position).add(dir.multiplyScalar(distance));
+            });
+
+            // --- Click Explosion Logic ---
+            document.addEventListener('click', (e) => {
+                // Trigger explosion at mouse position (projected to z=0 roughly)
+                const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+                vector.unproject(camera);
+                const dir = vector.sub(camera.position).normalize();
+                const distance = -camera.position.z / dir.z; // Project to z=0 plane
+                const pos = camera.position.clone().add(dir.multiplyScalar(20)); // Fixed distance for effect
+
+                const positions = explosionParticles.geometry.attributes.position.array;
+                const velocities = explosionParticles.geometry.userData.velocity;
+                
+                explosionParticles.geometry.userData.active = true;
+                explosionParticles.geometry.userData.time = 0;
+                explosionParticles.material.opacity = 1;
+
+                for(let i=0; i<explosionCount; i++) {
+                    positions[i*3] = pos.x;
+                    positions[i*3+1] = pos.y;
+                    positions[i*3+2] = pos.z;
+                    
+                    // Random explosion velocity
+                    velocities[i*3] = (Math.random() - 0.5) * 2;
+                    velocities[i*3+1] = (Math.random() - 0.5) * 2;
+                    velocities[i*3+2] = (Math.random() - 0.5) * 2;
+                }
+                explosionParticles.geometry.attributes.position.needsUpdate = true;
+            });
+
+            // --- Resize Logic ---
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // --- Typewriter Effect ---
+            const typeWriter = (element, text, speed = 30) => {
+                element.innerHTML = "";
+                let i = 0;
+                const timer = setInterval(() => {
+                    if (i < text.length) {
+                        element.innerHTML += text.charAt(i);
+                        i++;
+                    } else {
+                        clearInterval(timer);
+                    }
+                }, speed);
+            };
+            
+            // Start Typewriter on Load
+            const heroText = document.querySelector('.hero-content p');
+            if(heroText) {
+                const originalText = heroText.innerText;
+                typeWriter(heroText, originalText);
+            }
+
+            // --- Animation Loop ---
+            const clock = new THREE.Clock();
+            
+            const animate = () => {
+                requestAnimationFrame(animate);
+                const time = clock.getElapsedTime();
+
+                // Default rotation
+                particleSphere.rotation.y += 0.002;
+                
+                // Liquid Torus Animation
+                torusKnot.rotation.x += 0.002;
+                torusKnot.rotation.y += 0.003;
+                torusKnot.material.uniforms.time.value = time; // Update shader time
+
+                starField.rotation.y += 0.0005;
+
+                // Planets Animation
+                planetsGroup.children.forEach(planet => {
+                    planet.rotation.y += 0.005;
+                });
+                // Moon Orbit
+                if(planetsGroup.children[1] && planetsGroup.children[1].userData.moon) {
+                    const moon = planetsGroup.children[1].userData.moon;
+                    moon.position.x = Math.sin(time) * 4;
+                    moon.position.z = Math.cos(time) * 4;
+                }
+
+                // Trail Animation (Particles)
+                if(trailParticles) {
+                    const positions = trailParticles.geometry.attributes.position.array;
+                    const colors = trailParticles.geometry.attributes.color.array;
+                    const lives = trailParticles.geometry.userData.lives;
+
+                    // Spawn new particle at cursor
+                    // We spawn multiple per frame for smoothness if needed, but 1 is fine
+                    const idx = trailCursor;
+                    positions[idx*3] = mouse3D.x;
+                    positions[idx*3+1] = mouse3D.y;
+                    positions[idx*3+2] = mouse3D.z;
+                    lives[idx] = 1.0;
+                    
+                    // Cycle cursor
+                    trailCursor = (trailCursor + 1) % trailSize;
+
+                    // Update all particles
+                    for(let i=0; i<trailSize; i++) {
+                        if(lives[i] > 0) {
+                            lives[i] -= 0.02; // Decay rate
+                            if(lives[i] < 0) lives[i] = 0;
+
+                            // Color gradient: Cyan -> Purple -> Transparent
+                            const color = new THREE.Color();
+                            color.setHSL(0.5 + (1.0 - lives[i]) * 0.4, 1.0, 0.5 * lives[i]);
+                            
+                            colors[i*3] = color.r;
+                            colors[i*3+1] = color.g;
+                            colors[i*3+2] = color.b;
+
+                            // Optional: Drift
+                            // positions[i*3+1] += 0.01; 
+                        } else {
+                            // Hide dead particles
+                            positions[i*3] = 9999;
+                        }
+                    }
+                    trailParticles.geometry.attributes.position.needsUpdate = true;
+                    trailParticles.geometry.attributes.color.needsUpdate = true;
+                }
+
+                // Explosion Animation
+                if(explosionParticles.geometry.userData.active) {
+                    const positions = explosionParticles.geometry.attributes.position.array;
+                    const velocities = explosionParticles.geometry.userData.velocity;
+                    explosionParticles.geometry.userData.time += 0.01;
+                    
+                    for(let i=0; i<explosionCount; i++) {
+                        positions[i*3] += velocities[i*3];
+                        positions[i*3+1] += velocities[i*3+1];
+                        positions[i*3+2] += velocities[i*3+2];
+                    }
+                    explosionParticles.geometry.attributes.position.needsUpdate = true;
+                    
+                    // Fade out
+                    explosionParticles.material.opacity -= 0.01;
+                    if(explosionParticles.material.opacity <= 0) {
+                        explosionParticles.geometry.userData.active = false;
+                    }
+                }
+
+                // Floating shapes animation
+                shapesGroup.children.forEach((child, i) => {
+                    child.rotation.x += 0.01;
+                    child.rotation.y += 0.01;
+                    child.position.y += Math.sin(time + i) * 0.02;
+                });
+
+                // Big Blocks Animation (REMOVED)
+                // bigBlocksGroup loop removed
+
+                // Sun Shader Update (REMOVED)
+                // sun.material.uniforms.time.value = time;
+
+                // Blob Animation (Vertex Wave)
+                const positions = blobSphere.geometry.attributes.position;
+                const originalPositions = blobSphere.geometry.userData.originalPositions;
+                
+                for (let i = 0; i < positions.count; i++) {
+                    const px = originalPositions[i * 3];
+                    const py = originalPositions[i * 3 + 1];
+                    const pz = originalPositions[i * 3 + 2];
+                    
+                    // Wave calculation
+                    const wave1 = 0.5 * Math.sin(time * 2 + px * 0.5);
+                    const wave2 = 0.5 * Math.cos(time * 1.5 + py * 0.3);
+                    
+                    // Apply displacement
+                    const scale = 1 + (wave1 + wave2) * 0.1;
+                    
+                    positions.setXYZ(i, px * scale, py * scale, pz * scale);
+                }
+                positions.needsUpdate = true;
+                blobSphere.rotation.y += 0.005;
+
+                // Mouse interaction smoothing
+                particleSphere.rotation.x += (mouseY - particleSphere.rotation.x) * 0.05;
+                particleSphere.rotation.y += (mouseX - particleSphere.rotation.y) * 0.05;
+                
+                // bigBlocksGroup interaction removed
+
+                renderer.render(scene, camera);
+            };
+            animate();
+
+            // Show canvas
+            container.style.opacity = 1;
+
+            // Trả về các objects để GSAP điều khiển
+            return { particleSphere, torusKnot, shapesGroup, bigBlocksGroup, blobSphere, planetsGroup, camera, scene };
+        };
+
+        // --- GSAP SCROLL ANIMATIONS ---
+        const initScrollAnimations = (threeObjects) => {
+            gsap.registerPlugin(ScrollTrigger);
+            const { particleSphere, torusKnot, shapesGroup, bigBlocksGroup, blobSphere, planetsGroup, camera, scene } = threeObjects;
+
+            // 1. "Deep Scroll" Effect - Camera di chuyển sâu vào vũ trụ khi scroll
+            // Kết nối toàn bộ chiều dài trang web với vị trí Z của camera
+            gsap.to(camera.position, {
+                scrollTrigger: {
+                    trigger: "body",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1 // Smooth scrubbing
+                },
+                z: 10, // Zoom vào gần hơn (từ 25 xuống 10)
+                y: -5  // Pan xuống dưới một chút
+            });
+
+            // 5. Liquid Torus Magical Scroll
+            // Xoay và biến dạng mạnh khi scroll
+            gsap.to(torusKnot.rotation, {
+                scrollTrigger: {
+                    trigger: "body",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1.5
+                },
+                x: Math.PI * 4, // Xoay nhiều vòng hơn
+                y: Math.PI * 2,
+                z: Math.PI
+            });
+            
+            // Hiệu ứng "Warp" - Kéo dãn không gian
+            // Reduced scale to prevent filling screen
+            gsap.to(torusKnot.scale, {
+                scrollTrigger: {
+                    trigger: "#features",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: 1
+                },
+                x: 1.5, // Reduced from 2.5
+                y: 1.5, // Reduced from 2.5
+                z: 0.8  
+            });
+
+            // Di chuyển Torus xuyên qua màn hình
+            // Adjusted trajectory to fly BY the camera, not THROUGH it
+            gsap.fromTo(torusKnot.position, 
+                { z: -5, x: 0 },
+                {
+                    scrollTrigger: {
+                        trigger: "body",
+                        start: "top top",
+                        end: "bottom bottom",
+                        scrub: 2
+                    },
+                    z: 5,  // Stop before hitting camera (Camera ends at z=10)
+                    x: 12  // Move further to the right to clear center view
+                }
+            );
+
+            // 6. Blob Movement
+            gsap.to(blobSphere.position, {
+                scrollTrigger: {
+                    trigger: "body",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 2
+                },
+                x: -15, // Move to other side
+                y: 5
+            });
+
+            // 7. Planets Movement (Parallax)
+            gsap.to(planetsGroup.position, {
+                scrollTrigger: {
+                    trigger: "body",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1
+                },
+                y: 10 // Move planets up slightly
+            });
+
+            // 4. Big Blocks Explosion (REMOVED)
+            // Removed GSAP for bigBlocksGroup
+
+            // 2. Rotate Scene on Scroll (Xoay cả vũ trụ)
+            gsap.to(scene.rotation, {
+                scrollTrigger: {
+                    trigger: "body",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 2
+                },
+                z: Math.PI / 4 // Nghiêng vũ trụ 45 độ
+            });
+
+            // 3. Explode Shapes (Bung các hình khối ra khi tới phần Features)
+            gsap.to(shapesGroup.scale, {
+                scrollTrigger: {
+                    trigger: "#features",
+                    start: "top bottom",
+                    end: "center center",
+                    scrub: 1
+                },
+                x: 1.5, y: 1.5, z: 1.5
+            });
+
+            // 4. UI Animations
+            // Hero Text Stagger
+            const tl = gsap.timeline();
+            tl.from(".hero-content h1", { y: 100, opacity: 0, duration: 1, ease: "power4.out", skewY: 7 })
+              .from(".hero-content p", { x: -50, opacity: 0, duration: 0.8 }, "-=0.5")
+              .from(".hero-content button", { scale: 0, opacity: 0, stagger: 0.1, duration: 0.5, ease: "back.out(1.7)" }, "-=0.3");
+
+            // Features Cards Reveal
+            gsap.utils.toArray(".feature-card").forEach((card, i) => {
+                gsap.from(card, {
+                    scrollTrigger: {
+                        trigger: card,
+                        start: "top 85%",
+                        toggleActions: "play none none reverse"
+                    },
+                    y: 100,
+                    opacity: 0,
+                    rotationX: 45, // Hiệu ứng lật thẻ 3D
+                    duration: 0.8,
+                    delay: i * 0.1,
+                    ease: "power2.out"
+                });
+            });
+
+            // Project Cards Drop Effect
+            // Ensure initial state
+            gsap.set(".project-card", { y: -100, opacity: 0 });
+
+            gsap.to(".project-card", {
+                scrollTrigger: {
+                    trigger: "#projects",
+                    start: "top 75%",
+                    toggleActions: "play none none none"
+                },
+                y: 0,
+                opacity: 1,
+                stagger: 0.2,
+                duration: 1,
+                ease: "bounce.out"
+            });
+
+            // Skill Cards Reveal & Progress Bar Animation
+            gsap.utils.toArray(".skill-card").forEach((card, i) => {
+                const bar = card.querySelector('.skill-bar');
+                const width = bar.getAttribute('data-width');
+                
+                // Card entrance
+                gsap.from(card, {
+                    scrollTrigger: {
+                        trigger: card,
+                        start: "top 90%",
+                        toggleActions: "play none none reverse"
+                    },
+                    x: -50,
+                    opacity: 0,
+                    duration: 0.6,
+                    delay: i * 0.1,
+                    ease: "power2.out"
+                });
+
+                // Bar fill animation
+                gsap.to(bar, {
+                    scrollTrigger: {
+                        trigger: card,
+                        start: "top 85%",
+                        toggleActions: "play none none reverse"
+                    },
+                    width: width,
+                    duration: 1.5,
+                    ease: "power4.out",
+                    delay: 0.2 + (i * 0.1)
+                });
+            });
+
+            // Social Cards Stagger (Card Drop Effect)
+            // Ensure initial state
+            gsap.set(".social-card", { y: -100, opacity: 0 });
+            
+            gsap.to(".social-card", {
+                scrollTrigger: {
+                    trigger: "#connect",
+                    start: "top 85%", 
+                    toggleActions: "play none none none"
+                },
+                y: 0,
+                opacity: 1,
+                stagger: 0.15,
+                duration: 1.2,
+                ease: "bounce.out"
+            });
+
+            // Marquee Text Scroll (Di chuyển chữ lớn ngang màn hình)
+            gsap.to(".marquee-container", {
+                scrollTrigger: {
+                    trigger: ".marquee-container",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: 1
+                },
+                xPercent: -20 // Trượt sang trái 20%
+            });
+
+            // Parallax Text Background
+            gsap.to(".parallax-text", {
+                scrollTrigger: {
+                    trigger: "#features",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: 1
+                },
+                y: 200 // Di chuyển dọc chậm hơn nội dung chính
+            });
+        };
+
+        // Start Everything
+        window.onload = () => {
+            const threeObjects = initThree();
+            initScrollAnimations(threeObjects);
+        };
+    </script>
+</body>
+</html>
